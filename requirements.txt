@@ -1,0 +1,7 @@
+Flask
+flask-cors
+PyMuPDF
+nltk
+Sastrawi
+scikit-learn
+numpy

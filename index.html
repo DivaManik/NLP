@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pencarian Dokumen</title>
+    <style>
+        /* General Styling */
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); /* Softer, modern gradient */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* System fonts */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto; /* Changed to auto to allow scrolling if content exceeds viewport */
+            overflow-x: hidden; /* Prevent horizontal scrollbar */
+            color: #333;
+            padding: 20px 0; /* Added padding top and bottom for gap */
+        }
+
+        .container {
+            max-width: 650px;
+            width: 90%;
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15); /* Stronger, softer shadow */
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin: auto; /* Center the container horizontally */
+        }
+
+        .container:hover {
+            transform: translateY(-3px); /* Subtle lift on hover */
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+
+        h3 {
+            font-weight: 600;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333; /* Darker text for heading */
+        }
+
+        h3 .icon {
+            margin-right: 10px;
+            color: #66a6ff; /* Icon color matching gradient */
+            font-size: 1.5em; /* Larger icon size */
+            line-height: 1; /* Align text vertically */
+        }
+
+        /* Search Input Group Styling */
+        .search-input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            font-size: 1.2rem;
+            z-index: 2;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 15px 15px 50px; /* Increased padding, space for icon */
+            height: auto;
+            border-radius: 10px; /* Rounded input field */
+            border: 1px solid #ddd;
+            font-size: 1.1rem;
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            outline: none; /* Remove default outline */
+        }
+
+        .search-input:focus {
+            border-color: #66a6ff;
+            box-shadow: 0 0 0 4px rgba(102, 166, 255, 0.25); /* Subtle focus glow */
+        }
+
+        /* Autocomplete List Styling */
+        .autocomplete-list {
+            position: absolute;
+            /* Adjust width to fit container padding, assuming container's padding is 40px on each side */
+            width: calc(100% - 80px); 
+            left: 40px; /* Align with container's left padding */
+            top: calc(100% + 5px); /* Position below input with small gap */
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            z-index: 999;
+            max-height: 250px;
+            overflow-y: auto;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+        }
+
+        .autocomplete-list.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .autocomplete-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            border-bottom: 1px solid #f8f8f8;
+            color: #555;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #eef7ff; /* Light blue hover */
+            color: #333;
+        }
+
+        /* Search Results Styling */
+        .search-results {
+            position: relative;
+            width: 100%;
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-top: 25px;
+            padding: 15px;
+            max-height: 400px; /* Max height for search results */
+            overflow-y: auto; /* Enable scrolling for results */
+            box-sizing: border-box; /* Include padding in width/height */
+
+            /* Custom scrollbar styles (Webkit browsers) */
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: #66a6ff #f1f1f1; /* Firefox */
+        }
+        .search-results::-webkit-scrollbar {
+            width: 8px;
+        }
+        .search-results::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .search-results::-webkit-scrollbar-thumb {
+            background: #66a6ff;
+            border-radius: 10px;
+        }
+        .search-results::-webkit-scrollbar-thumb:hover {
+            background: #528cde;
+        }
+
+        .search-result-item {
+            padding: 12px 15px;
+            cursor: default; /* Changed to default */
+            transition: background-color 0.2s ease;
+            border-bottom: 1px dashed #f0f0f0;
+            color: #444;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .search-result-item strong {
+            color: #222;
+        }
+
+        .search-result-item small {
+            color: #777;
+            font-size: 0.9em;
+        }
+
+        /* Utility classes for messages and spinners */
+        .text-center {
+            text-align: center;
+        }
+        .text-muted {
+            color: #6c757d;
+        }
+        .text-primary {
+            color: #66a6ff;
+        }
+        .text-danger {
+            color: #dc3545;
+        }
+        .p-3 {
+            padding: 1rem; /* approx 16px */
+        }
+        .mt-2 {
+            margin-top: 0.5rem; /* approx 8px */
+        }
+        .mb-0 {
+            margin-bottom: 0;
+        }
+        .me-2 {
+            margin-right: 0.5rem; /* approx 8px */
+        }
+
+        /* Simple Spinner CSS */
+        .spinner {
+            display: inline-block;
+            width: 2rem; /* 32px */
+            height: 2rem; /* 32px */
+            vertical-align: -0.125em;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            -webkit-animation: spinner-border .75s linear infinite;
+            animation: spinner-border .75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>
+            <span class="icon">🗎</span> Pencarian Dokumen
+        </h3>
+        
+        <div class="search-input-group">
+            <span class="input-icon">⌨️</span> <input type="text" class="search-input" id="searchInput" placeholder="Ketik kata kunci lalu tekan Enter...">
+            <div id="autocompleteList" class="autocomplete-list"></div>
+        </div>
+        
+        <div id="searchResults" class="search-results">
+            <div class="text-center text-muted p-3">
+                <span class="icon">🖊️</span> Ketik sesuatu untuk melihat saran atau hasil pencarian.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('searchInput');
+        const list = document.getElementById('autocompleteList');
+        const resultsDiv = document.getElementById('searchResults');
+
+        // Function to display an initial message in search results
+        function showInitialResultsMessage() {
+            resultsDiv.innerHTML = `
+                <div class="text-center text-muted p-3">
+                    <span class="icon">🖊️</span> Ketik sesuatu untuk melihat saran atau hasil pencarian.
+                </div>
+            `;
+        }
+
+        // Call it on page load
+        showInitialResultsMessage();
+
+        input.addEventListener('keyup', async (e) => {
+            const query = input.value.trim();
+
+            if (e.key === 'Enter') {
+                list.classList.remove('show'); // Hide autocomplete list
+                if (query) performSearch(query);
+                return;
+            }
+
+            // --- Autocomplete logic for other keys ---
+            if (!query) {
+                list.classList.remove('show'); // Hide autocomplete list
+                showInitialResultsMessage(); // Show initial message when input is empty
+                return;
+            }
+
+            try {
+                // Simulate API call delay for better visual feedback (optional)
+                // await new Promise(resolve => setTimeout(resolve, 100)); 
+
+                const res = await fetch('http://localhost:8000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                const data = await res.json();
+                
+                list.innerHTML = ''; // Clear previous suggestions
+
+                if (data.predict && data.predict.length > 0) {
+                    data.predict.forEach(prediction => {
+                        const item = document.createElement('div');
+                        item.className = 'autocomplete-item';
+                        item.innerText = query + ' ' + prediction; 
+                        item.onclick = () => {
+                            input.value = query + ' ' + prediction;
+                            list.classList.remove('show'); // Hide after selection
+                            input.focus(); // Keep focus on input
+                            // IMPORTANT: No search triggered here! User must press Enter.
+                        };
+                        list.appendChild(item);
+                    });
+                    list.classList.add('show'); // Show the list
+                } else {
+                    list.classList.remove('show'); // Hide if no predictions
+                }
+            } catch (err) {
+                console.error('Error fetching autocomplete:', err);
+                list.classList.remove('show'); // Hide list on error
+            }
+        });
+
+        // Hide autocomplete list when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!list.contains(event.target) && !input.contains(event.target)) {
+                list.classList.remove('show');
+            }
+        });
+
+        async function performSearch(query) {
+            resultsDiv.innerHTML = `
+                <div class="text-center text-muted p-3">
+                    <span class="spinner"></span>
+                    <p class="mt-2 mb-0">Mencari hasil untuk "${query}"...</p>
+                </div>
+            `; // Show loading indicator
+
+            try {
+                // Simulate API call delay for better visual feedback (optional)
+                // await new Promise(resolve => setTimeout(resolve, 500)); 
+
+                const res = await fetch('http://localhost:7000/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                const data = await res.json();
+                renderResults(data.results);
+            } catch (err) {
+                console.error('Error during search:', err);
+                resultsDiv.innerHTML = `
+                    <div class="text-center text-danger p-3">
+                        <span class="icon">⚠️</span> Gagal mengambil hasil pencarian. Coba lagi nanti.
+                    </div>
+                `;
+            }
+        }
+
+        function renderResults(results) {
+            resultsDiv.innerHTML = ''; // Clear previous results
+
+            if (results && results.length > 0) {
+                results.forEach(result => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML = `<strong>${result.dokumen}</strong>`;
+                    // </br><span>Skor Kemiripan : ${result.skor}</span>
+                    resultsDiv.appendChild(item);
+                });
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="text-center text-muted p-3">
+                        <span class="icon">😔</span> Tidak ada hasil ditemukan untuk pencarian Anda.
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
